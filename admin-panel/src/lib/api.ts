@@ -50,6 +50,7 @@ export type Product = {
   description_fa: string;
   price: number;
   compare_at_price: number | null;
+  discount_percent?: number;
   category: number;
   category_name_fa: string;
   images: string[];

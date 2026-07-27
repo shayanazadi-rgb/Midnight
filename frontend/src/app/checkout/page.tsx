@@ -4,6 +4,7 @@ import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
+import { useAuth } from "@/components/auth-provider";
 import { useCart } from "@/components/cart-provider";
 import { checkout, formatPrice } from "@/lib/api";
 
@@ -12,6 +13,7 @@ const CART_KEY = "midnightshop_cart_id";
 export default function CheckoutPage() {
   const router = useRouter();
   const { cart, loading } = useCart();
+  const { ready, isAuthenticated, token, profile } = useAuth();
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [phone, setPhone] = useState("");
@@ -19,12 +21,29 @@ export default function CheckoutPage() {
   const [postalCode, setPostalCode] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [prefilled, setPrefilled] = useState(false);
+
+  useEffect(() => {
+    if (ready && !isAuthenticated) {
+      router.replace("/auth?next=/checkout");
+    }
+  }, [ready, isAuthenticated, router]);
 
   useEffect(() => {
     if (!loading && (!cart || cart.items.length === 0)) {
       router.replace("/cart");
     }
   }, [loading, cart, router]);
+
+  useEffect(() => {
+    if (!profile || prefilled) return;
+    setFirstName(profile.first_name || "");
+    setLastName(profile.last_name || "");
+    setPhone(profile.phone || "");
+    setAddress(profile.address || "");
+    setPostalCode(profile.postal_code || "");
+    setPrefilled(true);
+  }, [profile, prefilled]);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -36,13 +55,17 @@ export default function CheckoutPage() {
     setSubmitting(true);
     setError("");
     try {
-      const order = await checkout(cartId, {
-        first_name: firstName.trim(),
-        last_name: lastName.trim(),
-        phone: phone.trim(),
-        address: address.trim(),
-        postal_code: postalCode.trim(),
-      });
+      const order = await checkout(
+        cartId,
+        {
+          first_name: firstName.trim(),
+          last_name: lastName.trim(),
+          phone: phone.trim(),
+          address: address.trim(),
+          postal_code: postalCode.trim(),
+        },
+        token,
+      );
       router.push(`/payment/${order.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "ثبت اطلاعات ناموفق بود");
@@ -51,7 +74,7 @@ export default function CheckoutPage() {
     }
   }
 
-  if (loading) {
+  if (loading || !ready || !isAuthenticated) {
     return (
       <div className="mx-auto max-w-2xl px-5 pb-20 pt-28 text-plum/60 md:px-8">
         در حال بارگذاری…
@@ -69,7 +92,7 @@ export default function CheckoutPage() {
         </p>
       </div>
 
-      <form onSubmit={onSubmit} className="space-y-5 rounded-[1.75rem] bg-cream/70 p-6 ring-1 ring-line">
+      <form onSubmit={onSubmit} className="space-y-5 rounded-[1.75rem] bg-cream p-6 ring-1 ring-line">
         <div className="grid gap-4 sm:grid-cols-2">
           <label className="block space-y-2 text-sm text-plum">
             <span>نام</span>
@@ -103,6 +126,7 @@ export default function CheckoutPage() {
             inputMode="tel"
             autoComplete="tel"
             placeholder="09xxxxxxxxx"
+            readOnly
           />
         </label>
 

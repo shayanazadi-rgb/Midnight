@@ -18,7 +18,17 @@ class ProductListSerializer(serializers.ModelSerializer):
     category_name_fa = serializers.CharField(source="category.name_fa", read_only=True)
     tags = serializers.ListField(source="tag_list", read_only=True)
     in_stock = serializers.BooleanField(read_only=True)
-    discount_percent = serializers.IntegerField(read_only=True, allow_null=True)
+    price = serializers.IntegerField(source="sale_price", read_only=True)
+    compare_at_price = serializers.IntegerField(
+        source="display_compare_at",
+        read_only=True,
+        allow_null=True,
+    )
+    discount_percent = serializers.IntegerField(
+        source="effective_discount_percent",
+        read_only=True,
+        allow_null=True,
+    )
 
     class Meta:
         model = Product

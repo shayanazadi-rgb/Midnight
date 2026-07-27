@@ -19,7 +19,7 @@ export default async function ProductPage({ params }: { params: Params }) {
   }
 
   return (
-    <div className="mx-auto grid max-w-6xl gap-8 px-4 pb-16 pt-[7.25rem] sm:gap-10 sm:px-5 sm:pb-20 sm:pt-28 md:grid-cols-2 md:px-8 lg:gap-16">
+    <div className="mx-auto grid max-w-6xl gap-8 px-4 pb-16 pt-[7.25rem] sm:gap-10 sm:px-5 sm:pb-20 sm:pt-28 md:grid-cols-2 md:items-start md:gap-12 md:px-8 lg:gap-16 xl:max-w-7xl">
       <ProductGallery images={product.images || []} alt={product.name} />
       <ProductPurchase product={product} />
     </div>

@@ -1,15 +1,15 @@
 @import "tailwindcss";
 
 :root {
-  --pink: #efcce3;
+  --pink: #fff;
   --pink-soft: #f6e4ef;
   --pink-deep: #d9a7c7;
-  --plum: #682050;
+  --plum: #8a3a6a;
   --plum-soft: #8a3a6a;
   --plum-ink: #3f1230;
-  --cream: #fff7fb;
-  --mist: #f3e8ef;
-  --line: rgba(104, 32, 80, 0.14);
+  --cream: #f7d9ea;
+  --mist: #f4dceb;
+  --line: #68205024;
   --background: var(--pink);
   --foreground: var(--plum-ink);
 }
@@ -154,7 +154,7 @@ img {
   border: none;
   border-radius: 999px;
   background: var(--plum);
-  color: #fff7fb;
+  color: #fff;
   font-weight: 600;
   letter-spacing: 0.02em;
   min-height: 2.75rem;

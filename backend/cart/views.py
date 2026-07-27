@@ -58,7 +58,7 @@ class CartAddItemView(APIView):
             variant=variant,
             defaults={
                 "quantity": data["quantity"],
-                "unit_price": product.price,
+                "unit_price": product.sale_price,
                 "product_name": product.name,
                 "product_name_fa": product.name_fa,
                 "size": variant.size,

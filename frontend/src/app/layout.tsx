@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Cormorant_Garamond, Vazirmatn } from "next/font/google";
 
+import { AuthProvider } from "@/components/auth-provider";
+import { BottomNav } from "@/components/bottom-nav";
 import { CartProvider } from "@/components/cart-provider";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
@@ -36,7 +38,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  themeColor: "#efcce3",
+  themeColor: "#ffffff",
 };
 
 export default function RootLayout({
@@ -51,11 +53,14 @@ export default function RootLayout({
       className={`${vazirmatn.variable} ${cormorant.variable} h-full`}
     >
       <body className={`${vazirmatn.className} flex min-h-full flex-col antialiased`}>
-        <CartProvider>
-          <SiteHeader />
-          <main className="flex-1">{children}</main>
-          <SiteFooter />
-        </CartProvider>
+        <AuthProvider>
+          <CartProvider>
+            <SiteHeader />
+            <main className="flex-1 pb-28 md:pb-32">{children}</main>
+            <SiteFooter />
+            <BottomNav />
+          </CartProvider>
+        </AuthProvider>
       </body>
     </html>
   );

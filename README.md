@@ -23,7 +23,7 @@
 cd backend
 python -m pip install -r requirements.txt
 python manage.py migrate
-python manage.py seed_catalog
+python manage.py ensure_panel_admin
 python manage.py runserver
 ```
 

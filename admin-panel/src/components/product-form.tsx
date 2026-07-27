@@ -40,6 +40,7 @@ export function ProductForm({ productId }: Props) {
   const [name, setName] = useState("");
   const [descriptionFa, setDescriptionFa] = useState("");
   const [price, setPrice] = useState("890000");
+  const [discountPercent, setDiscountPercent] = useState("0");
   const [category, setCategory] = useState("");
   const [images, setImages] = useState<string[]>([]);
   const [featured, setFeatured] = useState(false);
@@ -69,6 +70,7 @@ export function ProductForm({ productId }: Props) {
           setName(p.name);
           setDescriptionFa(p.description_fa || p.description);
           setPrice(String(p.price));
+          setDiscountPercent(String(p.discount_percent ?? 0));
           setCategory(String(p.category));
           setImages(p.images || []);
           setFeatured(p.featured);
@@ -164,6 +166,7 @@ export function ProductForm({ productId }: Props) {
       description_fa: descriptionFa,
       description: descriptionFa,
       price: Number(price) || 0,
+      discount_percent: Math.min(100, Math.max(0, Number(discountPercent) || 0)),
       category: Number(category),
       images,
       featured,
@@ -231,6 +234,23 @@ export function ProductForm({ productId }: Props) {
             onChange={(e) => setPrice(e.target.value)}
             required
           />
+        </label>
+        <label className="space-y-2 text-sm">
+          <span>درصد تخفیف</span>
+          <input
+            className="field"
+            type="number"
+            min={0}
+            max={100}
+            value={discountPercent}
+            onChange={(e) => setDiscountPercent(e.target.value)}
+          />
+          <span className="block text-xs text-plum/55">
+            پیش‌فرض ۰ — مثلاً ۲۰ یعنی ۲۰٪ از قیمت کم می‌شود
+            {Number(discountPercent) > 0 && Number(price) > 0
+              ? ` · قیمت نهایی: ${Math.round(Number(price) * (100 - Number(discountPercent)) / 100).toLocaleString("fa-IR")} تومان`
+              : ""}
+          </span>
         </label>
         <label className="space-y-2 text-sm md:col-span-2">
           <span>توضیحات</span>

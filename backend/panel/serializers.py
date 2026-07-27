@@ -68,6 +68,7 @@ class PanelProductSerializer(serializers.ModelSerializer):
             "description_fa",
             "price",
             "compare_at_price",
+            "discount_percent",
             "category",
             "category_name_fa",
             "images",
@@ -80,8 +81,16 @@ class PanelProductSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ["slug", "created_at", "updated_at"]
 
+    def validate_discount_percent(self, value):
+        if value is None:
+            return 0
+        if value < 0 or value > 100:
+            raise serializers.ValidationError("درصد تخفیف باید بین ۰ تا ۱۰۰ باشد.")
+        return value
+
     def create(self, validated_data):
         variants_data = validated_data.pop("variants", [])
+        validated_data.setdefault("discount_percent", 0)
         name = validated_data.get("name") or validated_data.get("name_fa")
         validated_data["slug"] = unique_slug(name, Product)
         if not validated_data.get("description"):

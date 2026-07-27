@@ -2,10 +2,12 @@
 Catalog Views — Controllers (C in MVC) via DRF ViewSets.
 """
 
-from django.db.models import Count, Q
+from django.db.models import Count, Q, Sum
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
+
+from orders.models import Order
 
 from .models import Category, Product
 from .serializers import (
@@ -32,7 +34,7 @@ class ProductViewSet(viewsets.ReadOnlyModelViewSet):
     """
     GET /api/v1/products/
     GET /api/v1/products/{slug}/
-    Query: ?category=&featured=&search=&tag=
+    Query: ?category=&featured=&search=&tag=&sort=&discounted=
     """
 
     lookup_field = "slug"
@@ -64,12 +66,49 @@ class ProductViewSet(viewsets.ReadOnlyModelViewSet):
         if tag:
             qs = qs.filter(tags__icontains=tag)
 
+        discounted = params.get("discounted")
+        if discounted is not None and discounted.lower() in ("1", "true", "yes"):
+            qs = qs.filter(discount_percent__gt=0)
+
+        sort = (params.get("sort") or "").lower()
+        if sort == "newest":
+            qs = qs.order_by("-created_at", "-id")
+        elif sort == "bestsellers":
+            qs = qs.annotate(
+                units_sold=Sum(
+                    "orderitem__quantity",
+                    filter=Q(
+                        orderitem__order__status__in=[
+                            Order.STATUS_PAID,
+                            Order.STATUS_SHIPPED,
+                            Order.STATUS_PENDING,
+                        ]
+                    ),
+                )
+            ).order_by("-units_sold", "-created_at")
+        elif sort == "discount":
+            qs = qs.filter(discount_percent__gt=0).order_by(
+                "-discount_percent", "-created_at"
+            )
+
         return qs
 
     def get_serializer_class(self):
         if self.action == "retrieve":
             return ProductDetailSerializer
         return ProductListSerializer
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        try:
+            limit = int(request.query_params.get("limit") or 0)
+        except (TypeError, ValueError):
+            limit = 0
+        if limit > 0:
+            queryset = queryset[: min(limit, 48)]
+            serializer = self.get_serializer(queryset, many=True)
+            return Response({"count": len(serializer.data), "next": None, "previous": None, "results": serializer.data})
+        return super().list(request, *args, **kwargs)
 
     @action(detail=False, methods=["get"])
     def featured(self, request):

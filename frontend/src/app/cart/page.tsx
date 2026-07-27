@@ -2,14 +2,16 @@
 
 import Link from "next/link";
 
+import { useAuth } from "@/components/auth-provider";
 import { useCart } from "@/components/cart-provider";
 import { ShopImage } from "@/components/shop-image";
 import { formatPrice } from "@/lib/api";
 
 export default function CartPage() {
   const { cart, loading, setQuantity } = useCart();
+  const { ready, isAuthenticated } = useAuth();
 
-  if (loading) {
+  if (loading || !ready) {
     return (
       <div className="mx-auto max-w-4xl px-4 pb-16 pt-[7.25rem] text-plum/60 sm:px-5 sm:pb-20 sm:pt-28 md:px-8">
         در حال بارگذاری سبد...
@@ -18,6 +20,7 @@ export default function CartPage() {
   }
 
   const items = cart?.items || [];
+  const continueHref = isAuthenticated ? "/checkout" : "/auth?next=/checkout";
 
   return (
     <div className="mx-auto max-w-4xl px-4 pb-16 pt-[7.25rem] sm:px-5 sm:pb-20 sm:pt-28 md:px-8">
@@ -36,7 +39,7 @@ export default function CartPage() {
           {items.map((item) => (
             <article
               key={`${item.product_id}-${item.variant_id}`}
-              className="flex flex-col gap-4 rounded-[1.5rem] bg-cream/70 p-4 ring-1 ring-line sm:flex-row sm:items-center"
+              className="flex flex-col gap-4 rounded-[1.5rem] bg-cream p-4 ring-1 ring-line sm:flex-row sm:items-center"
             >
               <div className="relative h-28 w-24 overflow-hidden rounded-2xl bg-mist">
                 <ShopImage
@@ -93,7 +96,7 @@ export default function CartPage() {
               </p>
             </div>
             <Link
-              href="/checkout"
+              href={continueHref}
               className="btn-primary bg-cream text-plum hover:bg-pink"
             >
               ادامه خرید

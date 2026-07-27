@@ -27,8 +27,12 @@ class Product(models.Model):
     name_fa = models.CharField(max_length=200)
     description = models.TextField()
     description_fa = models.TextField()
-    price = models.PositiveIntegerField(help_text="Price in IRR (toman-style integer)")
+    price = models.PositiveIntegerField(help_text="Base price in IRR (toman-style integer)")
     compare_at_price = models.PositiveIntegerField(null=True, blank=True)
+    discount_percent = models.PositiveSmallIntegerField(
+        default=0,
+        help_text="Percent off base price (0–100)",
+    )
     category = models.ForeignKey(
         Category,
         on_delete=models.PROTECT,
@@ -56,10 +60,29 @@ class Product(models.Model):
         return self.variants.filter(stock__gt=0).exists()
 
     @property
-    def discount_percent(self) -> int | None:
-        if not self.compare_at_price or self.compare_at_price <= self.price:
+    def sale_price(self) -> int:
+        percent = min(int(self.discount_percent or 0), 100)
+        if percent <= 0:
+            return self.price
+        return max(0, round(self.price * (100 - percent) / 100))
+
+    @property
+    def display_compare_at(self) -> int | None:
+        if (self.discount_percent or 0) > 0 and self.price > self.sale_price:
+            return self.price
+        if self.compare_at_price and self.compare_at_price > self.sale_price:
+            return self.compare_at_price
+        return None
+
+    @property
+    def effective_discount_percent(self) -> int | None:
+        percent = int(self.discount_percent or 0)
+        if percent > 0:
+            return percent
+        compare = self.display_compare_at
+        if not compare or compare <= self.sale_price:
             return None
-        return round((1 - self.price / self.compare_at_price) * 100)
+        return round((1 - self.sale_price / compare) * 100)
 
 
 class ProductVariant(models.Model):

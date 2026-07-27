@@ -4,10 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
-import { useCart } from "@/components/cart-provider";
-
 export function SiteHeader() {
-  const { itemCount } = useCart();
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
@@ -25,22 +22,13 @@ export function SiteHeader() {
           : "bg-transparent"
       }`}
     >
-      <div className="mx-auto grid max-w-6xl grid-cols-[1fr_auto_1fr] items-center gap-2 px-4 py-2.5 sm:gap-3 sm:px-5 sm:py-3 md:gap-4 md:px-8 md:py-3.5">
-        <div className="justify-self-start">
-          <Link
-            href="/shop"
-            className="inline-flex h-10 items-center justify-center rounded-full border-2 border-plum/35 bg-cream px-3.5 text-[13px] font-bold tracking-wide text-plum shadow-[0_4px_16px_rgba(104,32,80,0.12)] transition active:scale-[0.98] hover:border-plum/55 hover:bg-white sm:h-11 sm:px-5 sm:text-sm md:h-12 md:px-6 md:text-base"
-          >
-            فروشگاه
-          </Link>
-        </div>
-
+      <div className="mx-auto flex max-w-6xl items-center justify-center px-4 py-2.5 sm:px-5 sm:py-3 md:px-8 md:py-4 xl:max-w-7xl">
         <Link
           href="/"
           aria-label="Midnight Shop"
-          className="group relative block shrink-0 justify-self-center"
+          className="group relative block shrink-0"
         >
-          <div className="relative h-[3.85rem] w-[3.85rem] transition duration-500 group-hover:scale-[1.03] sm:h-[4.5rem] sm:w-[4.5rem] md:h-[5.75rem] md:w-[5.75rem]">
+          <div className="relative h-[3.85rem] w-[3.85rem] transition duration-500 group-hover:scale-[1.03] sm:h-[4.5rem] sm:w-[4.5rem] md:h-[5.25rem] md:w-[5.25rem] lg:h-[5.75rem] lg:w-[5.75rem]">
             <svg
               viewBox="0 0 100 100"
               className="absolute inset-0 h-full w-full overflow-visible text-plum"
@@ -120,27 +108,6 @@ export function SiteHeader() {
             </div>
           </div>
         </Link>
-
-        <div className="flex items-center justify-self-end">
-          <Link
-            href="/cart"
-            aria-label={`سبد خرید، ${itemCount} قلم`}
-            className="relative inline-flex h-10 min-w-10 items-center justify-center gap-2 rounded-full border-2 border-plum/35 bg-cream px-2.5 text-sm font-bold text-plum shadow-[0_4px_16px_rgba(104,32,80,0.12)] transition active:scale-[0.98] hover:border-plum/55 hover:bg-white sm:h-11 sm:gap-2.5 sm:px-4 md:h-12 md:px-5"
-          >
-            <svg
-              viewBox="0 0 24 24"
-              className="h-5 w-5 shrink-0 sm:h-6 sm:w-6"
-              fill="currentColor"
-              aria-hidden="true"
-            >
-              <path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zm10 0c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2zM7.16 14.26l.03.01h9.47c.75 0 1.41-.41 1.75-1.03l3.58-6.49A1 1 0 0 0 21.13 5H5.21l-.94-2H1v2h2l3.6 7.59-1.35 2.44C4.52 15.37 5.48 17 7 17h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.11.96-1.38z" />
-            </svg>
-            <span className="hidden sm:inline">سبد خرید</span>
-            <span className="absolute -left-1 -top-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-plum px-1 text-[10px] font-bold text-cream sm:static sm:h-7 sm:min-w-7 sm:px-2 sm:text-xs">
-              {itemCount}
-            </span>
-          </Link>
-        </div>
       </div>
     </header>
   );

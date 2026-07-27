@@ -75,9 +75,30 @@ export function getApiBase() {
   return API_BASE;
 }
 
+async function parseApiError(res: Response): Promise<string> {
+  const text = await res.text();
+  if (!text) return `API error ${res.status}`;
+  try {
+    const data = JSON.parse(text) as Record<string, unknown>;
+    if (typeof data.detail === "string") return data.detail;
+    if (Array.isArray(data.non_field_errors) && data.non_field_errors[0]) {
+      return String(data.non_field_errors[0]);
+    }
+    const firstKey = Object.keys(data)[0];
+    if (firstKey) {
+      const value = data[firstKey];
+      if (Array.isArray(value) && value[0]) return String(value[0]);
+      if (typeof value === "string") return value;
+    }
+  } catch {
+    // plain text
+  }
+  return text;
+}
+
 async function apiFetch<T>(
   path: string,
-  init?: RequestInit & { cartId?: string },
+  init?: RequestInit & { cartId?: string; token?: string | null },
 ): Promise<T> {
   const headers = new Headers(init?.headers);
   headers.set("Accept", "application/json");
@@ -87,6 +108,9 @@ async function apiFetch<T>(
   if (init?.cartId) {
     headers.set("X-Cart-Id", init.cartId);
   }
+  if (init?.token) {
+    headers.set("Authorization", `Token ${init.token}`);
+  }
 
   const res = await fetch(`${API_BASE}${path}`, {
     ...init,
@@ -95,8 +119,11 @@ async function apiFetch<T>(
   });
 
   if (!res.ok) {
-    const detail = await res.text();
-    throw new Error(detail || `API error ${res.status}`);
+    throw new Error(await parseApiError(res));
+  }
+
+  if (res.status === 204) {
+    return undefined as T;
   }
 
   return res.json() as Promise<T>;
@@ -111,6 +138,8 @@ export async function getProducts(params?: {
   featured?: boolean;
   search?: string;
   tag?: string;
+  sort?: "newest" | "bestsellers" | "discount";
+  discounted?: boolean;
   limit?: number;
   offset?: number;
 }): Promise<Paginated<Product>> {
@@ -119,6 +148,8 @@ export async function getProducts(params?: {
   if (params?.featured != null) qs.set("featured", String(params.featured));
   if (params?.search) qs.set("search", params.search);
   if (params?.tag) qs.set("tag", params.tag);
+  if (params?.sort) qs.set("sort", params.sort);
+  if (params?.discounted) qs.set("discounted", "1");
   if (params?.limit != null) qs.set("limit", String(params.limit));
   if (params?.offset != null) qs.set("offset", String(params.offset));
   const query = qs.toString();
@@ -203,17 +234,89 @@ export type Order = {
 export async function checkout(
   cartId: string,
   payload: CheckoutPayload,
+  token?: string | null,
 ): Promise<Order> {
   return apiFetch<Order>("/checkout/", {
     method: "POST",
     body: JSON.stringify(payload),
     cache: "no-store",
     cartId,
+    token,
   });
 }
 
 export async function getOrder(orderId: number): Promise<Order> {
   return apiFetch<Order>(`/orders/${orderId}/`, { cache: "no-store" });
+}
+
+export async function getMyOrders(token: string): Promise<Order[]> {
+  return apiFetch<Order[]>("/orders/mine/", {
+    cache: "no-store",
+    token,
+  });
+}
+
+export type CustomerProfile = {
+  first_name: string;
+  last_name: string;
+  phone: string;
+  address: string;
+  postal_code: string;
+};
+
+export type AuthResponse = {
+  token: string;
+  phone: string;
+  profile?: CustomerProfile;
+};
+
+export type LoginPayload = {
+  phone: string;
+  password: string;
+};
+
+export type RegisterPayload = {
+  first_name: string;
+  last_name: string;
+  phone: string;
+  address: string;
+  postal_code?: string;
+  password: string;
+};
+
+export async function loginCustomer(payload: LoginPayload): Promise<AuthResponse> {
+  return apiFetch<AuthResponse>("/auth/login/", {
+    method: "POST",
+    body: JSON.stringify(payload),
+    cache: "no-store",
+  });
+}
+
+export async function registerCustomer(
+  payload: RegisterPayload,
+): Promise<AuthResponse> {
+  return apiFetch<AuthResponse>("/auth/register/", {
+    method: "POST",
+    body: JSON.stringify(payload),
+    cache: "no-store",
+  });
+}
+
+export async function logoutCustomer(token: string): Promise<void> {
+  await apiFetch("/auth/logout/", {
+    method: "POST",
+    cache: "no-store",
+    token,
+  });
+}
+
+export async function fetchMe(
+  token: string,
+): Promise<{ phone: string; profile: CustomerProfile }> {
+  return apiFetch<{ phone: string; profile: CustomerProfile }>("/auth/me/", {
+    cache: "no-store",
+    token,
+  });
 }
 
 export function formatPrice(amount: number): string {

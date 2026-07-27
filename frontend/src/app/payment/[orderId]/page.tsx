@@ -49,7 +49,7 @@ export default function PaymentPage({
         <p className="mt-3 text-plum/65">سفارش #{order.id} — هنوز درگاه پرداخت وصل نشده است.</p>
       </div>
 
-      <div className="space-y-6 rounded-[1.75rem] bg-cream/70 p-6 ring-1 ring-line">
+      <div className="space-y-6 rounded-[1.75rem] bg-cream p-6 ring-1 ring-line">
         <div className="space-y-2 text-sm text-plum/80">
           <p>
             <span className="text-plum/50">گیرنده: </span>

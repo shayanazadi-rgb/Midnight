@@ -3,7 +3,7 @@ import Link from "next/link";
 export function SiteFooter() {
   return (
     <footer className="mt-auto border-t border-line bg-plum text-cream">
-      <div className="mx-auto grid max-w-6xl gap-8 px-4 py-12 sm:gap-10 sm:px-5 sm:py-14 md:grid-cols-[1.4fr_1fr_1fr] md:px-8">
+      <div className="mx-auto grid max-w-6xl gap-8 px-4 py-12 sm:gap-10 sm:px-5 sm:py-14 md:grid-cols-[1.4fr_1fr_1fr] md:px-8 xl:max-w-7xl">
         <div>
           <p className="font-display text-2xl tracking-[0.14em] sm:text-3xl sm:tracking-[0.16em]">
             MIDNIGHT SHOP
@@ -35,7 +35,7 @@ export function SiteFooter() {
           </div>
         </div>
       </div>
-      <div className="border-t border-white/10 px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] text-center text-xs text-pink/70 sm:px-5 md:px-8">
+      <div className="border-t border-white/10 px-4 py-4 pb-[max(5.5rem,calc(env(safe-area-inset-bottom)+4.5rem))] text-center text-xs text-pink/70 sm:px-5 md:px-8">
         © {new Date().getFullYear()} midnightshop.ir — Lingerie & Underwear
       </div>
     </footer>

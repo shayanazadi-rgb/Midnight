@@ -58,7 +58,7 @@ class OrderSerializer(serializers.ModelSerializer):
         ]
 
 
-def create_order_from_cart(cart: Cart, data: dict) -> Order:
+def create_order_from_cart(cart: Cart, data: dict, user=None) -> Order:
     if not cart.items.exists():
         raise ValueError("سبد خرید خالی است.")
 
@@ -69,6 +69,7 @@ def create_order_from_cart(cart: Cart, data: dict) -> Order:
             )
 
     order = Order(
+        user=user if user and getattr(user, "is_authenticated", False) else None,
         first_name=data["first_name"].strip(),
         last_name=data["last_name"].strip(),
         customer_phone=data["phone"].strip(),
@@ -78,6 +79,23 @@ def create_order_from_cart(cart: Cart, data: dict) -> Order:
     )
     order.sync_customer_name()
     order.save()
+
+    if order.user is not None:
+        profile = getattr(order.user, "customer_profile", None)
+        if profile is not None:
+            profile.first_name = order.first_name
+            profile.last_name = order.last_name
+            profile.address = order.customer_address
+            profile.postal_code = order.postal_code
+            profile.save(
+                update_fields=[
+                    "first_name",
+                    "last_name",
+                    "address",
+                    "postal_code",
+                    "updated_at",
+                ]
+            )
 
     for item in cart.items.select_related("product", "variant"):
         OrderItem.objects.create(

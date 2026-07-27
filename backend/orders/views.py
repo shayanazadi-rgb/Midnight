@@ -1,4 +1,5 @@
 from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -30,11 +31,29 @@ class CheckoutView(APIView):
             )
 
         try:
-            order = create_order_from_cart(cart, serializer.validated_data)
+            order = create_order_from_cart(
+                cart,
+                serializer.validated_data,
+                user=request.user,
+            )
         except ValueError as exc:
             return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
 
         return Response(OrderSerializer(order).data, status=status.HTTP_201_CREATED)
+
+
+class MyOrdersView(APIView):
+    """GET /api/v1/orders/ — list authenticated customer's orders."""
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        orders = (
+            Order.objects.filter(user=request.user)
+            .prefetch_related("items")
+            .order_by("-created_at")
+        )
+        return Response(OrderSerializer(orders, many=True).data)
 
 
 class OrderDetailView(APIView):
