@@ -6,6 +6,7 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       { protocol: "https", hostname: "images.unsplash.com" },
       { protocol: "https", hostname: "*.onrender.com", pathname: "/media/**" },
+      { protocol: "https", hostname: "res.cloudinary.com" },
       { protocol: "https", hostname: "*.vercel.app" },
       {
         protocol: "http",

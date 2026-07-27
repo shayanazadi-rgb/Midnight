@@ -7,6 +7,7 @@ const API_ORIGIN =
 /** Turn relative /media paths into absolute URLs the browser can load. */
 export function resolveMediaUrl(src?: string | null): string {
   if (!src) return "/logo.jpg";
+  if (src.startsWith("data:")) return src;
   if (src.startsWith("http://") || src.startsWith("https://") || src.startsWith("/")) {
     if (src.startsWith("/media/")) return `${API_ORIGIN}${src}`;
     return src;
@@ -15,8 +16,9 @@ export function resolveMediaUrl(src?: string | null): string {
   return src;
 }
 
-function isLocalMedia(src: string) {
+function isUnoptimizedMedia(src: string) {
   return (
+    src.startsWith("data:") ||
     src.includes("127.0.0.1") ||
     src.includes("localhost") ||
     src.startsWith("/media/") ||
@@ -30,14 +32,14 @@ type Props = Omit<ImageProps, "src"> & {
 
 export function ShopImage({ src, alt, ...rest }: Props) {
   const resolved = resolveMediaUrl(src);
-  const local = isLocalMedia(resolved);
+  const skipOptimize = isUnoptimizedMedia(resolved);
 
   return (
     <Image
       {...rest}
       src={resolved}
       alt={alt}
-      unoptimized={local || rest.unoptimized}
+      unoptimized={skipOptimize || rest.unoptimized}
     />
   );
 }

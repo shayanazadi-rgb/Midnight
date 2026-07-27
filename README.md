@@ -80,4 +80,5 @@ Set on each Vercel app:
 Set on Render:
 - `CORS_ALLOWED_ORIGINS` = your two Vercel URLs (comma-separated)
 - Optional later: `DATABASE_URL` from Neon Postgres
+- Optional: `CLOUDINARY_URL` for hosted image storage (otherwise production uploads are stored as compressed data-URLs in the database so they survive Render redeploys)
 

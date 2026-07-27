@@ -120,6 +120,19 @@ STORAGES = {
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
+# Optional Cloudinary (set CLOUDINARY_URL=cloudinary://key:secret@cloud_name)
+USE_CLOUDINARY = bool(os.environ.get("CLOUDINARY_URL", "").strip())
+if USE_CLOUDINARY:
+    INSTALLED_APPS = [*INSTALLED_APPS, "cloudinary", "cloudinary_storage"]
+    STORAGES = {
+        "default": {
+            "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
+        },
+        "staticfiles": {
+            "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
+        },
+    }
+
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # --- CORS (Next.js frontends) ---
@@ -131,6 +144,8 @@ _default_cors = ",".join(
         "http://127.0.0.1:3001",
         "https://midnightshop.ir",
         "http://midnightshop.ir",
+        "https://midnight-shop-nine.vercel.app",
+        "https://midnight-admin-pi.vercel.app",
     ]
 )
 CORS_ALLOW_ALL_ORIGINS = os.environ.get("CORS_ALLOW_ALL", "").lower() in (

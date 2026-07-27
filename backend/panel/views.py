@@ -2,12 +2,18 @@
 Admin panel controllers — authenticated write API for the separate admin-panel app.
 """
 
+import base64
+import os
 import uuid
+from io import BytesIO
 from pathlib import Path
 
 from django.conf import settings
 from django.contrib.auth import authenticate
+from django.core.files.base import ContentFile
+from django.core.files.storage import default_storage
 from django.db.models import Count, Q, Sum
+from PIL import Image, ImageOps
 from rest_framework import status, viewsets
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import action, api_view, permission_classes
@@ -99,8 +105,34 @@ class PanelProductViewSet(viewsets.ModelViewSet):
         return qs.order_by("-updated_at")
 
 
+def _compress_image(uploaded_file) -> tuple[bytes, str]:
+    """Return JPEG bytes + extension for a reasonably sized web image."""
+    image = Image.open(uploaded_file)
+    image = ImageOps.exif_transpose(image)
+    if image.mode in ("RGBA", "P"):
+        background = Image.new("RGB", image.size, (255, 255, 255))
+        rgba = image.convert("RGBA")
+        background.paste(rgba, mask=rgba.split()[-1])
+        image = background
+    else:
+        image = image.convert("RGB")
+    image.thumbnail((1400, 1400), Image.Resampling.LANCZOS)
+    buffer = BytesIO()
+    image.save(buffer, format="JPEG", quality=78, optimize=True)
+    return buffer.getvalue(), ".jpg"
+
+
+def _use_persistent_data_urls() -> bool:
+    """On Render (DEBUG=False) disk is ephemeral unless Cloudinary is configured."""
+    if os.environ.get("CLOUDINARY_URL") or getattr(settings, "USE_CLOUDINARY", False):
+        return False
+    if os.environ.get("PERSIST_MEDIA_AS_DATA_URL", "").lower() in ("0", "false", "no"):
+        return False
+    return not settings.DEBUG
+
+
 class MediaUploadView(APIView):
-    """Upload product/category photos to local MEDIA_ROOT."""
+    """Upload product/category photos (persistent on Render via data-URL or Cloudinary)."""
 
     permission_classes = [IsAdminUser]
     parser_classes = [MultiPartParser, FormParser]
@@ -123,17 +155,37 @@ class MediaUploadView(APIView):
 
         folder = request.data.get("folder", "products")
         safe_folder = "".join(c for c in folder if c.isalnum() or c in "-_") or "products"
+
+        try:
+            content, out_ext = _compress_image(file)
+        except Exception:
+            return Response(
+                {"detail": "خواندن تصویر ناموفق بود."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Prefer Cloudinary / default storage when configured
+        if os.environ.get("CLOUDINARY_URL") or getattr(settings, "USE_CLOUDINARY", False):
+            filename = f"{safe_folder}/{uuid.uuid4().hex}{out_ext}"
+            saved = default_storage.save(filename, ContentFile(content))
+            url = default_storage.url(saved)
+            if url.startswith("//"):
+                url = f"https:{url}"
+            return Response({"url": url, "path": saved})
+
+        # Production without object storage: embed in DB-friendly data URL
+        if _use_persistent_data_urls():
+            b64 = base64.b64encode(content).decode("ascii")
+            url = f"data:image/jpeg;base64,{b64}"
+            return Response({"url": url, "path": url})
+
+        # Local/dev filesystem
         dest_dir = Path(settings.MEDIA_ROOT) / safe_folder
         dest_dir.mkdir(parents=True, exist_ok=True)
-
-        filename = f"{uuid.uuid4().hex}{ext}"
+        filename = f"{uuid.uuid4().hex}{out_ext}"
         dest = dest_dir / filename
-        with dest.open("wb") as out:
-            for chunk in file.chunks():
-                out.write(chunk)
-
+        dest.write_bytes(content)
         relative = f"{safe_folder}/{filename}"
-        # Always absolute /media/... so it does not nest under /api/v1/panel/
         url = request.build_absolute_uri(f"{settings.MEDIA_URL}{relative}")
         return Response({"url": url, "path": f"{settings.MEDIA_URL}{relative}"})
 
